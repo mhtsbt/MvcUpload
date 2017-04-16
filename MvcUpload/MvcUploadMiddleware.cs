@@ -12,11 +12,18 @@ namespace MvcUpload
     {
         readonly RequestDelegate _next;
         readonly IHostingEnvironment _environment;
+        private static Random random = new Random();
 
         public MvcUploadMiddleware(RequestDelegate next, IHostingEnvironment environment)
         {
             _next = next;
             _environment = environment;
+        }
+
+        private static string GenerateFilePrefix()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, 50).Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         public Task Invoke(HttpContext context)
@@ -37,6 +44,11 @@ namespace MvcUpload
                     .Parse(file.ContentDisposition)
                     .FileName
                     .Trim('"');
+
+                if (options.AddRandomPrefix)
+                {
+                    fileName = GenerateFilePrefix() + "_" + fileName;
+                }
 
                 var filePath = Path.Combine(_environment.ContentRootPath, uploadsPath, fileName);
 
